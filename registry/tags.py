@@ -4,6 +4,7 @@ import logging
 import flask
 import simplejson as json
 
+import config
 import signals
 import storage
 import toolkit
@@ -99,6 +100,11 @@ def put_tag(namespace, repository, tag):
         return toolkit.api_error('Invalid data')
     if not store.exists(store.image_json_path(data)):
         return toolkit.api_error('Image not found', 404)
+    if config.load().strict_tags:
+        latest = tag.endswith("latest")
+        duplicate = store.exists(store.tag_path(namespace, repository, tag))
+        if not latest and duplicate:
+            return toolkit.api_error('Tag already exists', 409)
     store.put_content(store.tag_path(namespace, repository, tag), data)
     sender = flask.current_app._get_current_object()
     signals.tag_created.send(sender, namespace=namespace,

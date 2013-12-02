@@ -2,6 +2,7 @@
 import json
 
 import base
+import config
 
 
 class TestTags(base.TestCase):
@@ -53,3 +54,29 @@ class TestTags(base.TestCase):
     def test_special_chars(self):
         repos_name = '{0}%$_-test'.format(self.gen_random_string(5))
         self.test_simple(repos_name)
+
+    def test_strict_tags(self):
+        config.load().strict_tags = True
+        repos_name = self.gen_random_string()
+        image_id = self.gen_random_string()
+        layer_data = self.gen_random_string(1024)
+        self.upload_image(image_id, parent_id=None, layer=layer_data)
+
+        # create non-latest tag
+        url = '/v1/repositories/foo/{0}/tags/1.1'.format(repos_name)
+        resp = self.http_client.put(url,
+                                    data=json.dumps(image_id))
+        self.assertEqual(resp.status_code, 200, resp.data)
+        # attempt to update latest tag
+        resp = self.http_client.put(url,
+                                    data=json.dumps(image_id))
+        self.assertEqual(resp.status_code, 409, resp.data)
+        # create latest tag
+        url = '/v1/repositories/foo/{0}/tags/1.1-latest'.format(repos_name)
+        resp = self.http_client.put(url,
+                                    data=json.dumps(image_id))
+        self.assertEqual(resp.status_code, 200, resp.data)
+        # update latest tag
+        resp = self.http_client.put(url,
+                                    data=json.dumps(image_id))
+        self.assertEqual(resp.status_code, 200, resp.data)

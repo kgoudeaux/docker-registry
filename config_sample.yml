@@ -22,6 +22,9 @@ common:
     # Set a random string here
     secret_key: REPLACEME
 
+    # Default to allowing tag updates
+    strict_tags: false
+
 
 # This is the default configuration when no flavor is specified
 dev:
