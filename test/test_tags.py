@@ -67,7 +67,7 @@ class TestTags(base.TestCase):
         resp = self.http_client.put(url,
                                     data=json.dumps(image_id))
         self.assertEqual(resp.status_code, 200, resp.data)
-        # attempt to update latest tag
+        # attempt to update non-latest tag should fail
         resp = self.http_client.put(url,
                                     data=json.dumps(image_id))
         self.assertEqual(resp.status_code, 409, resp.data)
@@ -76,7 +76,7 @@ class TestTags(base.TestCase):
         resp = self.http_client.put(url,
                                     data=json.dumps(image_id))
         self.assertEqual(resp.status_code, 200, resp.data)
-        # update latest tag
+        # update latest tag should succeed
         resp = self.http_client.put(url,
                                     data=json.dumps(image_id))
         self.assertEqual(resp.status_code, 200, resp.data)

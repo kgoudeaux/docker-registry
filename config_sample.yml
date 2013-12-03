@@ -22,7 +22,7 @@ common:
     # Set a random string here
     secret_key: REPLACEME
 
-    # Default to allowing tag updates
+    # True disallows tag updates for tags that don't end with latest
     strict_tags: false
 
 
