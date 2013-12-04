@@ -34,6 +34,18 @@ class TestIndex(base.TestCase):
         resp = self.http_client.put('/v1/repositories/{0}/images'.format(repo),
                                     data=json.dumps(images))
         self.assertEqual(resp.status_code, 204, resp.data)
+
+        #Upload and Tag Image
+        image_one = images[0]['id']
+        image_two = images[1]['id']
+        layer_data = self.gen_random_string(1024)
+        self.upload_image(image_one, parent_id=None, layer=layer_data)
+        self.upload_image(image_two, parent_id=None, layer=layer_data)
+
+        url = '/v1/repositories/{0}/tags/1.1'.format(repo)
+        resp = self.http_client.put(url, data=json.dumps(image_one))
+        url = '/v1/repositories/{0}/tags/1.2'.format(repo)
+        resp = self.http_client.put(url, data=json.dumps(image_two))
         # GET
         resp = self.http_client.get('/v1/repositories/{0}/images'.format(repo))
         self.assertEqual(resp.status_code, 200, resp.data)

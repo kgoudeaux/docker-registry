@@ -3,6 +3,7 @@ import flask
 import simplejson as json
 
 import config
+import signals
 import storage
 import toolkit
 
@@ -50,20 +51,24 @@ def put_username(username):
     return toolkit.response('', 204)
 
 
-def update_index_images(namespace, repository, data):
-    path = store.index_images_path(namespace, repository)
-    try:
-        images = {}
-        data = json.loads(data) + json.loads(store.get_content(path))
-        for i in data:
-            iid = i['id']
-            if iid in images and 'checksum' in images[iid]:
-                continue
-            images[iid] = i
-        data = images.values()
-        store.put_content(path, json.dumps(data))
-    except IOError:
-        store.put_content(path, data)
+def update_index(sender, namespace, repository, **kwargs):
+    data = []
+    index_path = store.index_images_path(namespace, repository)
+    if not store.exists(index_path):
+        store.put_content(index_path, json.dumps([]))
+    tag_path = store.tag_path(namespace, repository)
+    for path in store.list_directory(tag_path):
+        tag_name = path.split('/').pop()
+        if not tag_name.startswith('tag_'):
+            continue
+        image_id = store.get_content(path)
+        checksum = store.get_content(store.image_checksum_path(image_id))
+        entry = dict(Tag=tag_name, checksum=checksum, id=image_id)
+        data.append(entry)
+    store.put_content(index_path, json.dumps(data))
+
+signals.tag_created.connect(update_index, app)
+signals.tag_deleted.connect(update_index, app)
 
 
 @app.route('/v1/repositories/<path:repository>', methods=['PUT'])
@@ -80,7 +85,7 @@ def put_repository(namespace, repository, images=False):
         return toolkit.api_error('Error Decoding JSON', 400)
     if not isinstance(data, list):
         return toolkit.api_error('Invalid data')
-    update_index_images(namespace, repository, flask.request.data)
+    update_index(None, namespace, repository)
     headers = generate_headers(namespace, repository, 'write')
     code = 204 if images is True else 200
     return toolkit.response('', code, headers)
