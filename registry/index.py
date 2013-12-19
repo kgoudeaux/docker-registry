@@ -1,5 +1,6 @@
 
 import flask
+import os
 import simplejson as json
 
 import config
@@ -98,6 +99,8 @@ def get_repository_images(namespace, repository):
     data = None
     try:
         path = store.index_images_path(namespace, repository)
+        if not os.path.exists(path):
+            update_index(None, namespace, repository)
         data = store.get_content(path)
     except IOError:
         return toolkit.api_error('images not found', 404)

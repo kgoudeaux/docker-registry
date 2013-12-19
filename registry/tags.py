@@ -4,7 +4,6 @@ import logging
 import flask
 import simplejson as json
 
-import config
 import signals
 import storage
 import toolkit
@@ -78,23 +77,8 @@ def get_tag(namespace, repository, tag):
                  namespace, repository, tag))
     data = None
     try:
-        from distutils import version
-        if config.load().strict_tags and tag.endswith("-latest"):
-            prefix = tag[:-7]
-            tags = []
-            for fname in store.list_directory(store.tag_path(namespace,
-                                                             repository)):
-                tag_name = fname.split('/').pop()
-                if not tag_name.startswith('tag_{0}'.format(prefix)):
-                    continue
-                tags.append(tag_name)
-            if tags:
-                tags.sort(key=version.LooseVersion, reverse=True)
-                data = store.get_content(
-                    store.tag_path(namespace, repository, tags[0][4:]))
-        else:
-            data = store.get_content(store.tag_path(namespace, repository,
-                                                    tag))
+        data = store.get_content(store.tag_path(namespace, repository,
+                                                tag))
     except IOError:
         return toolkit.api_error('Tag not found', 404)
     return toolkit.response(data)
@@ -116,14 +100,6 @@ def put_tag(namespace, repository, tag):
         return toolkit.api_error('Invalid data')
     if not store.exists(store.image_json_path(data)):
         return toolkit.api_error('Image not found', 404)
-    if config.load().strict_tags and tag != "latest":
-        alias = tag.endswith("-latest")
-        duplicate = store.exists(store.tag_path(namespace, repository, tag))
-        if alias:
-            return toolkit.api_error(
-                'latest alias tags cannot be created/updated', 400)
-        if duplicate:
-            return toolkit.api_error('Tag already exists', 409)
     store.put_content(store.tag_path(namespace, repository, tag), data)
     sender = flask.current_app._get_current_object()
     signals.tag_created.send(sender, namespace=namespace,
