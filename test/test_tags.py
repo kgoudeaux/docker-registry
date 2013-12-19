@@ -67,10 +67,10 @@ class TestTags(base.TestCase):
         resp = self.http_client.put(url,
                                     data=json.dumps(image_id))
         self.assertEqual(resp.status_code, 200, resp.data)
-        # attempt to update non-latest tag should fail
+        # attempt to update non-latest tag should succeed
         resp = self.http_client.put(url,
                                     data=json.dumps(image_id))
-        self.assertEqual(resp.status_code, 409, resp.data)
+        self.assertEqual(resp.status_code, 200, resp.data)
         # create latest tag
         url = '/v1/repositories/foo/{0}/tags/1.1-latest'.format(repos_name)
         resp = self.http_client.put(url,
