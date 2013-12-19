@@ -71,12 +71,14 @@ class TestTags(base.TestCase):
         resp = self.http_client.put(url,
                                     data=json.dumps(image_id))
         self.assertEqual(resp.status_code, 409, resp.data)
-        # create latest tag
-        url = '/v1/repositories/foo/{0}/tags/1.1-latest'.format(repos_name)
+        # create latest tag should fail
+        url = '/v1/repositories/foo/{0}/tags/1-latest'.format(repos_name)
         resp = self.http_client.put(url,
                                     data=json.dumps(image_id))
-        self.assertEqual(resp.status_code, 200, resp.data)
-        # update latest tag should succeed
-        resp = self.http_client.put(url,
+        self.assertEqual(resp.status_code, 400, resp.data)
+        # get latest alias tag
+        resp = self.http_client.get(url,
                                     data=json.dumps(image_id))
         self.assertEqual(resp.status_code, 200, resp.data)
+        data = json.loads(resp.data)
+        self.assertEqual(data, image_id, "Image id")
